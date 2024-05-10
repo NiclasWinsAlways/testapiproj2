@@ -13,8 +13,6 @@ namespace TestRepo.DTO
     public class Account
     {
         [Key]  // Explicitly marking Id as the primary key if not yet configured
-
-        [JsonIgnore]
         public int Id { get; set; }
         public string Name { get; set; }
         public string UserName { get; set; }

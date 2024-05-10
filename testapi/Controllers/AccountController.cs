@@ -28,6 +28,16 @@ namespace testapi.Controllers
             _dbAccess = dbAccess;
         }
 
+        [HttpGet("list")]
+        public IActionResult ListAccounts()
+        {
+            var accounts = _dbAccess.GetAllAccounts(); // Ensure you have a method to get all accounts
+            if (accounts == null || !accounts.Any())
+                return NotFound("No accounts found.");
+
+            return Ok(accounts);
+        }
+
         [HttpPost("create")]
         public IActionResult CreateAccount([FromBody] Account account)
         {

@@ -16,6 +16,9 @@ namespace TestRepo.DTO
         public string? Author { get; set; }
         public int Volumes { get; set; }
         public string? coverImage { get; set; }
+        public int Pages { get; set; }
+        public bool IsLoaned { get; set; }
+        public DateTime? DueDate { get; set; }
     }
 
 }

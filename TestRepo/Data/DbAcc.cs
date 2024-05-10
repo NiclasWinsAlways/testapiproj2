@@ -83,6 +83,28 @@ namespace TestRepo.Data
                 throw new ApplicationException("Failed to add book progress, possibly because the book does not exist.", ex);
             }
         }
+        //loan book
+        public bool LoanBook(int bookId, DateTime dueDate)
+        {
+            var book = _dbContext.Books.FirstOrDefault(b => b.Id == bookId);
+            if (book == null)
+            {
+                return false; // Book not found
+            }
+
+            if (book.IsLoaned)
+            {
+                return false; // Book is already loaned out
+            }
+
+            book.IsLoaned = true;
+            book.DueDate = dueDate;
+            _dbContext.Entry(book).State = EntityState.Modified;
+            _dbContext.SaveChanges();
+
+            return true; // Loan operation successful
+        }
+
         public Book GetBookByTitle(string title)
         {
             // Assuming the title is a string property of the Book class
@@ -455,6 +477,9 @@ namespace TestRepo.Data
             _dbContext.SaveChanges();
         }
 
-
+        public List<Account> GetAllAccounts()
+        {
+            return _dbContext.Acc.ToList();
+        }
     }
 }
