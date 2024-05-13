@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
+using Microsoft.Data.SqlClient;
+using System;
 using TestRepo.Data;
 using TestRepo.DTO;
 using TestRepo.Interface;
@@ -12,12 +13,10 @@ namespace testapi.Controllers
     {
         private readonly DbAccess _dbAccess;
 
-        // Constructor to inject the DbAccess service
         public BookController(DbAccess dbAccess)
         {
             _dbAccess = dbAccess;
         }
-
 
         [HttpGet("all")]
         public IActionResult GetAllBooks()
@@ -40,7 +39,6 @@ namespace testapi.Controllers
             }
         }
 
-        // GET method to retrieve a book by ID
         [HttpGet("{id}")]
         public IActionResult GetBookById(int id)
         {
@@ -52,14 +50,23 @@ namespace testapi.Controllers
             return Ok(book);
         }
 
-
-        // POST method to add a new book
         [HttpPost("add")]
         public IActionResult AddBook([FromBody] Book book)
         {
-            // Directly call to add the book in the database without an account ID
-            _dbAccess.AddBook(book);
-            return Created($"api/book/{book.Id}", book); // Return a '201 Created' response with the book object
+            if (book == null)
+            {
+                return BadRequest("Book data is required.");
+            }
+
+            try
+            {
+                _dbAccess.AddBook(book);
+                return CreatedAtAction(nameof(GetBookById), new { id = book.Id }, book);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while adding the book: " + ex.Message);
+            }
         }
 
         [HttpPost("GetBookByTitle")]
@@ -70,61 +77,43 @@ namespace testapi.Controllers
                 return BadRequest("Title is required.");
             }
 
-            var book = _dbAccess.GetBookByTitle(titleRequest.title);
-            if (book == null)
-            {
-                return NotFound(new { message = $"No book found with title: {titleRequest.title}" });
-            }
-
-            return Ok(book);
-        }
-
-
-        // POST method to add progress for a specific book
-        // {bookId} is passed as a URL segment
-        [HttpPost("{bookId}/progress")]
-        public IActionResult AddBookProgress(int bookId, [FromBody] BookProgressDto bookProgressDto)
-        {
-            // Verify if the book with the given ID exists by checking for any associated volumes
-            var volumes = _dbAccess.GetBookVol(bookId);
-            if (volumes == null || !volumes.Any())
-            {
-                return NotFound($"No book found with ID {bookId}");
-            }
-
-            // Map DTO to the domain model
-            var bookProgress = new BookProgress
-            {
-                BookId = bookId,
-                AccountId = bookProgressDto.AccountId,  // Assuming AccountId is provided through some means
-                volumesRead = bookProgressDto.volumesRead
-            };
-
             try
             {
-                _dbAccess.AddBookProgress(bookProgress);
-                return CreatedAtAction(nameof(GetBookProgress), new { bookId = bookId, progressId = bookProgress.Id }, bookProgress);
+                var book = _dbAccess.GetBookByTitle(titleRequest.title);
+                if (book == null)
+                {
+                    return NotFound(new { message = $"No book found with title: {titleRequest.title}" });
+                }
+
+                return Ok(book);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, "An error occurred while adding book progress: " + ex.Message);
+                return StatusCode(500, "An error occurred while retrieving the book by title: " + ex.Message);
             }
         }
 
-        // GET method to retrieve specific book progress using bookId and progressId
-        [HttpGet("{bookId}/progress/{progressId}")]
-        public IActionResult GetBookProgress(int bookId, int progressId)
+        
+        [HttpPost("loan/{bookId}")]
+        public IActionResult LoanBook(int bookId, [FromBody] DateTime dueDate)
         {
-            var progress = _dbAccess.GetBookProgressById(progressId);
-            if (progress == null || progress.BookId != bookId)
+            try
             {
-                return NotFound("Progress not found or does not belong to the specified book.");
-            }
+                bool result = _dbAccess.LoanBook(bookId, dueDate);
 
-            return Ok(progress);
+                if (!result)
+                {
+                    return NotFound("Book not found or already loaned.");
+                }
+
+                return Ok("Book loaned successfully.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while loaning the book: " + ex.Message);
+            }
         }
 
-        // GET method to retrieve all books associated with an accountId
         [HttpGet("list/{accountId}")]
         public IActionResult GetBooksByAccount(int accountId)
         {
@@ -132,7 +121,6 @@ namespace testapi.Controllers
             return Ok(booksWithProgress);
         }
 
-        // POST method to create a volume for a book, parameters are passed via query string
         [HttpPost("add-volume")]
         public IActionResult CreateVolume([FromQuery] int bookId, [FromQuery] int volNumber)
         {
@@ -154,10 +142,8 @@ namespace testapi.Controllers
             {
                 return StatusCode(500, "Internal server error: " + ex.Message);
             }
-
         }
 
-        // DELETE: api/Book/delete/{bookId}
         [HttpDelete("delete/{bookId}")]
         public IActionResult DeleteBookById(int bookId)
         {
@@ -166,16 +152,26 @@ namespace testapi.Controllers
                 return BadRequest("Invalid book ID");
             }
 
-            var deleted = _dbAccess.DeleteBook(bookId);
-            if (deleted)
+            try
             {
-                return Ok(new { message = "Book deleted successfully." });
+                bool deleted = _dbAccess.DeleteBook(bookId);
+                if (deleted)
+                {
+                    return Ok(new { message = "Book deleted successfully." });
+                }
+                else
+                {
+                    return NotFound(new { message = "Book not found." });
+                }
             }
-            else
+            catch (SqlException ex)
             {
-                return NotFound(new { message = "Book not found." });
+                return StatusCode(500, new ProblemDetails { Title = "Database error", Detail = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return StatusCode(500, new ProblemDetails { Title = "Invalid operation", Detail = ex.Message });
             }
         }
-
     }
 }

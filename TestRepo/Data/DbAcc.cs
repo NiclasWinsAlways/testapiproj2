@@ -30,7 +30,7 @@ namespace TestRepo.Data
             public BookProgress Progress { get; set; }
             public Book Book { get; set; }
         }
-
+        #region
         public List<Book> GetAllBooks()
         {
             return _dbContext.Books.ToList();
@@ -118,7 +118,8 @@ namespace TestRepo.Data
                 .Include(bp => bp.Account)
                 .FirstOrDefault(bp => bp.Id == progressId);
         }
-
+        #endregion
+        #region
         public void UpdPageCount(updpage newpage)
         {
             // Update read page count for user
@@ -150,6 +151,8 @@ namespace TestRepo.Data
                 _dbContext.SaveChanges();
             }
         }
+        #endregion
+        #region
         public List<Volume> GetBookVol(int bookid)
         {
             var bookfound = _dbContext.Books.Find(bookid);
@@ -274,7 +277,7 @@ namespace TestRepo.Data
 
             return "Volume created successfully";
         }
-
+        #endregion
 
 
         //public string CreateVol(int BookId, int volNumber)
@@ -295,7 +298,7 @@ namespace TestRepo.Data
 
         //    return "Volume created successfully";
         //}
-
+        #region
         //password hash example
         //public object CheckLogin(string userName, string password)
         //{
@@ -481,5 +484,6 @@ namespace TestRepo.Data
         {
             return _dbContext.Acc.ToList();
         }
+        #endregion
     }
 }
