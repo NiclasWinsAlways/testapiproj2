@@ -38,7 +38,7 @@ namespace TestProject2.controllertest
         {
             _transaction.Rollback();
             _transaction.Dispose();
-            ResetIdentity("Accounts"); // Replace "Acc" with the actual name of your account table
+            //ResetIdentity("Accounts"); comment this out when needed
             _context.Dispose();
         }
 
