@@ -18,7 +18,7 @@ builder.Services.AddScoped<DbAccess>();
 string conStr = builder.Configuration.GetConnectionString("DefaultConnection");
 if (string.IsNullOrEmpty(conStr))
 {
-    conStr = @"Server=localhost; Database=MyBookDB; Trusted_Connection=True; TrustServerCertificate=True;";
+    conStr = @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; Initial Catalog=MyDatabase";
 }
 builder.Services.AddDbContext<Dbcontext>(options =>
     options.UseSqlServer(conStr));

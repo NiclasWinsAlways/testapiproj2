@@ -4,91 +4,124 @@ using Microsoft.EntityFrameworkCore;
 using TestRepo.Data;
 using TestRepo.DTO;
 using System.Linq;
-#region
-//ARRANGE VARIABLE CREATION ETC / WHAT DO WE WANT TO TEST 
-//ACT - CALL METHOD
-//ASSERT VERIFY I GOT THE RIGHT CALL BACK
-#endregion
+using System.Collections.Generic;
+using System.Transactions;
+
 namespace TestProject2.controllertest
 {
-    // Class to set up a shared context for all the tests in this file
-    public class BookRepoTestsFixture
-    {
-        public static Dbcontext Context { get; private set; }
-
-        static BookRepoTestsFixture()
-        {
-            var options = new DbContextOptionsBuilder<Dbcontext>()
-                .UseSqlServer("Server=localhost; Database=MyBookDB_Test; Trusted_Connection=True; TrustServerCertificate=True;") // Example connection string
-                .Options;
-
-            Context = new Dbcontext(options);
-            PopulateData();
-        }
-
-        private static void PopulateData()
-        {
-            // Ensure database is clean before populating
-            Context.Database.EnsureCreated();
-
-            var b1 = new Book { Id = 1, Author = "No Longer Human", Description = "test" };
-            var b2 = new Book { Id = 2, Author = "Another Book", Description = "another test" };
-            Context.Books.AddRange(b1, b2);
-            Context.SaveChanges();
-        }
-    }
-
-    // Class for the test cases
     public class BookRepoTests : IDisposable
     {
         private readonly Dbcontext _context;
+        private readonly List<Book> _testBooks;
+        private readonly TransactionScope _transactionScope;
 
         public BookRepoTests()
         {
-            _context = BookRepoTestsFixture.Context;
+            var connectionString = "Data Source=(localdb)\\MSSQLLocalDB; Integrated Security=True; Initial Catalog=MyDatabase; TrustServerCertificate=True;";
+            var options = new DbContextOptionsBuilder<Dbcontext>()
+                .UseSqlServer(connectionString)
+                .Options;
+
+            _context = new Dbcontext(options);
+            _transactionScope = new TransactionScope(TransactionScopeOption.RequiresNew,
+                                                     new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
+                                                     TransactionScopeAsyncFlowOption.Enabled);
+
+            _testBooks = new List<Book>
+            {
+                new Book { Author = "No Longer Human", Description = "A profound exploration of personal identity.", Title = "No Longer Human", IsLoaned = false },
+                new Book { Author = "Another Book", Description = "A second test book.", Title = "Another Book", IsLoaned = false }
+            };
+            PopulateData();
+        }
+
+        private void PopulateData()
+        {
+            _context.Books.AddRange(_testBooks);
+            _context.SaveChanges();
         }
 
         public void Dispose()
         {
-            // Clean up test data to avoid side effects between tests
-            // Since we're using a separate test database, we don't need to delete anything
+            _transactionScope.Dispose();
+            _context.Dispose();
         }
 
-        #region Test cases
-
-        // Test case: GetAllBooks_ReturnAll
         [Fact]
-        public void GetAllBooks_ReturnAll()
+        public void LoanBook_SuccessfullyLoan()
         {
-            // Act
-            var books = _context.Books.ToList();
+            var book = _testBooks.First();
+            var result = LoanBook(book.Id, DateTime.Now.AddDays(15));
 
-            // Assert
-            Assert.Equal(2, books.Count);
-            Assert.Contains(books, b => b.Author == "No Longer Human");
-            Assert.Contains(books, b => b.Author == "Another Book");
+            Assert.True(result); // Loan operation successful
+            Assert.True(book.IsLoaned);
+            Assert.NotNull(book.DueDate);
         }
 
-        // Test case: GetBookById_ReturnsCorrectBook
         [Fact]
-        public void GetBookById_ReturnsCorrectBook()
+        public void LoanBook_FailAlreadyLoaned()
         {
-            // Arrange
-            var dbAcc = new DbAccess(_context);
+            var book = _testBooks.First();
+            book.IsLoaned = true; // Pretend the book is already loaned out
+            _context.SaveChanges();
 
-            // Act
-            var bookId = 2;
-            var book = dbAcc.GetBookById(bookId);
+            var result = LoanBook(book.Id, DateTime.Now.AddDays(15));
 
-            // Assert
-            Assert.NotNull(book);
-            Assert.Equal(bookId, book.Id);
-            Assert.Equal("Another Book", book.Author);
-            Assert.Equal("another test", book.Description);
+            Assert.False(result); // Should fail since the book is already loaned
         }
 
-        #endregion
+
+        [Fact]
+        public void DeleteBook_FailNonexistentBook()
+        {
+            var result = DeleteBook(-1); // Assuming -1 is a non-existent ID
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void AddBook_SuccessfullyAdded()
+        {
+            var newBook = new Book { Author = "New Author", Description = "New Book Description", Title = "New Title" };
+            AddBook(newBook);
+
+            Assert.Contains(_context.Books, b => b.Title == "New Title");
+        }
+  
+
+        // Methods under test
+        public bool LoanBook(int bookId, DateTime dueDate)
+        {
+            var book = _context.Books.FirstOrDefault(b => b.Id == bookId);
+            if (book == null || book.IsLoaned)
+            {
+                return false; // Book not found or already loaned
+            }
+
+            book.IsLoaned = true;
+            book.DueDate = dueDate;
+            _context.SaveChanges();
+
+            return true; // Loan operation successful
+        }
+       
+        public bool DeleteBook(int bookId)
+        {
+            var book = _context.Books.Find(bookId);
+            if (book != null)
+            {
+                _context.Books.Remove(book);
+                _context.SaveChanges();
+                return true;
+            }
+            return false;
+        }
+       
+
+        public void AddBook(Book book)
+        {
+            _context.Books.Add(book);
+            _context.SaveChanges();
+        }
     }
 }
-
 

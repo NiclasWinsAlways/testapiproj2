@@ -22,6 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\testapi\testapi.csproj" />
     <ProjectReference Include="..\TestRepo\TestRepo.csproj" />
   </ItemGroup>
 

@@ -39,6 +39,7 @@ namespace testapi.Controllers
             }
         }
 
+
         [HttpGet("{id}")]
         public IActionResult GetBookById(int id)
         {
@@ -113,7 +114,7 @@ namespace testapi.Controllers
                 return StatusCode(500, "An error occurred while loaning the book: " + ex.Message);
             }
         }
-
+        // add a unit test for this one later
         [HttpGet("list/{accountId}")]
         public IActionResult GetBooksByAccount(int accountId)
         {
@@ -172,6 +173,8 @@ namespace testapi.Controllers
             {
                 return StatusCode(500, new ProblemDetails { Title = "Invalid operation", Detail = ex.Message });
             }
+
+
         }
     }
 }
