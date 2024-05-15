@@ -227,36 +227,34 @@ namespace TestRepo.Data
         public void CreateVolProgress(CVolProgress volProgress)
         {
             int bookid = volProgress.bookId;
-
             var account = _dbContext.Acc.Find(volProgress.accountId);
 
             if (account != null)
             {
-                // Check if a BookProgress record with the given accountId and bookId already exists
-                var existingvolProgress = _dbContext.volProgress
-                    .SingleOrDefault(bp => bp.AccountId == volProgress.accountId && bp.BookId == bookid && bp.volId == volProgress.volId);
+                // Check if a VolProgress record with the given accountId, bookId, and volId already exists
+                var existingVolProgress = _dbContext.volProgress
+                    .SingleOrDefault(vp => vp.AccountId == volProgress.accountId && vp.BookId == bookid && vp.volId == volProgress.volId);
 
-                // If it does not exist, create a new BookProgress record
-                if (existingvolProgress == null)
+                // If it does not exist, create a new VolProgress record
+                if (existingVolProgress == null)
                 {
-                    // Create a new volProgress object
-                    var VolProgress = new VolProgress
+                    var newVolProgress = new VolProgress
                     {
                         BookId = bookid,
                         AccountId = volProgress.accountId,
                         volId = volProgress.volId,
-                        pagesRead = 0,
-
+                        pagesRead = volProgress.PagesRead,  // Set pagesRead to the value from volProgress
                     };
 
-                    // Add the new BookProgress object to the BooksProgress DbSet
-                    _dbContext.volProgress.Add(VolProgress);
+                    // Add the new VolProgress object to the volProgress DbSet
+                    _dbContext.volProgress.Add(newVolProgress);
 
                     // Save the changes
                     _dbContext.SaveChanges();
                 }
             }
         }
+
 
         public string CreateVol(int bookId, int volNumber)
         {

@@ -7,55 +7,86 @@ using Xunit;
 using TestRepo.Data;
 using TestRepo.DTO;
 using testapi.Controllers;
-using Microsoft.EntityFrameworkCore.Storage;
 
 namespace TestProject2.controllertest
 {
     public class BookControllerTests : IDisposable
     {
-        private readonly Dbcontext _context;
-        private readonly DbAccess _dbAccess;
-        private readonly BookController _controller;
-        private readonly IDbContextTransaction _transaction;
+        private Dbcontext _context;
+        private DbAccess _dbAccess;
+        private BookController _controller;
 
         public BookControllerTests()
         {
+            InitializeContext();
+        }
+
+        private void InitializeContext()
+        {
             var connectionString = @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; Initial Catalog=MyDatabase; TrustServerCertificate=True;";
             var options = new DbContextOptionsBuilder<Dbcontext>()
-                .UseSqlServer(connectionString)
+                .UseSqlServer(connectionString, sqlServerOptionsAction: sqlOptions =>
+                {
+                    sqlOptions.EnableRetryOnFailure(
+                        maxRetryCount: 5,
+                        maxRetryDelay: TimeSpan.FromSeconds(30),
+                        errorNumbersToAdd: null);
+                })
                 .Options;
 
             _context = new Dbcontext(options);
             _dbAccess = new DbAccess(_context);
             _controller = new BookController(_dbAccess);
-
-            // Start a transaction for each test
-            _transaction = _context.Database.BeginTransaction();
         }
 
         public void Dispose()
         {
-            // Roll back the transaction after each test
-            _transaction.Rollback();
-            _transaction.Dispose();
             _context.Dispose();
+            InitializeContext(); // Reinitialize for each test to ensure isolation
         }
+
 
         private void SeedDatabase()
         {
-            _context.Books.RemoveRange(_context.Books);  // Clear existing data to avoid conflicts
-            _context.SaveChanges();
+            const int maxRetries = 5;
+            const int retryDelaySeconds = 3;
 
-            var book = new Book { Title = "Sample Book", Author = "Author Test" };
-            _context.Books.Add(book);
-            _context.SaveChanges();
+            for (int retryCount = 0; retryCount < maxRetries; retryCount++)
+            {
+                try
+                {
+                    // Clear all entries to ensure a consistent state
+                    for (int i = 0; i < 3; i++)
+                    {
+                        _context.Books.RemoveRange(_context.Books);
+                    }
+                    _context.SaveChanges();
+
+                    // Add test data anew
+                    var book = new Book { Title = "Sample Book", Author = "Author Test" };
+                    _context.Books.Add(book);
+                    _context.SaveChanges();
+
+                    break; // Exit the loop if successful
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (retryCount == maxRetries - 1)
+                    {
+                        throw; // Re-throw the exception if max retries are reached
+                    }
+
+                    Console.WriteLine($"Concurrency exception occurred. Retry #{retryCount + 1} of {maxRetries}.");
+                    System.Threading.Thread.Sleep(TimeSpan.FromSeconds(retryDelaySeconds));
+                }
+            }
         }
+
 
         [Fact]
         public void GetAllBooks_ShouldReturnBooksWhenAvailable()
         {
-            SeedDatabase(); // Ensures there is at least one book
-
+            SeedDatabase();
             var result = _controller.GetAllBooks() as OkObjectResult;
 
             Assert.NotNull(result);
@@ -67,7 +98,6 @@ namespace TestProject2.controllertest
         [Fact]
         public void GetAllBooks_ShouldReturnNotFoundWhenNoBooksAvailable()
         {
-            // Ensure no books are present
             _context.Books.RemoveRange(_context.Books);
             _context.SaveChanges();
 
@@ -226,16 +256,17 @@ namespace TestProject2.controllertest
             Assert.Equal(200, result.StatusCode);
             Assert.Equal("Book loaned successfully.", result.Value);
         }
-
         [Fact]
-        public void LoanBook_BookNotFoundOrLoaned_ReturnsNotFound()
+        public void LoanBook_WithInvalidBookId_ReturnsNotFound()
         {
-            SeedDatabase();
+            // Arrange
             int invalidBookId = 999; // Assuming 999 is not a valid ID
             DateTime dueDate = DateTime.Now.AddDays(14);
 
+            // Act
             var result = _controller.LoanBook(invalidBookId, dueDate) as NotFoundObjectResult;
 
+            // Assert
             Assert.NotNull(result);
             Assert.Equal(404, result.StatusCode);
             Assert.Equal("Book not found or already loaned.", result.Value);

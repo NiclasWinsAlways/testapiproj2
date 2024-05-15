@@ -11,5 +11,6 @@ namespace TestRepo.Interface
         public int accountId { get; set; }
         public int bookId { get; set; }
         public int volId { get; set; }
+        public int PagesRead { get; set; }
     }
 }

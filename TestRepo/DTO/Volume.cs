@@ -9,7 +9,7 @@ using TestRepo.Interface;
 
 namespace TestRepo.DTO
 {
-    public class Volume
+    public class Volume : Ivol
     {
         public int VolumeId { get; set; }
         public int VolNumber { get; set; }
@@ -20,6 +20,7 @@ namespace TestRepo.DTO
         public virtual Book Book { get; set; }
 
         public int totalPages { get; set; }
+
     }
 
 }
