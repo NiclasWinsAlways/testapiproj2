@@ -5,60 +5,65 @@ using Xunit;
 using Microsoft.EntityFrameworkCore;
 using TestRepo.Data;
 using TestRepo.DTO;
-using Microsoft.EntityFrameworkCore.Storage;
 
 namespace TestProject2.repotest
 {
     public class AccountTests : IDisposable
     {
+        private readonly Dbcontext _context;
         private readonly DbAccess _dbAccess;
-        private readonly Dbcontext _context; // Ensure the context class name matches your actual DbContext class.
-        private List<Account> _initialData;  // This must be declared at the class level
-        private readonly IDbContextTransaction _transaction;
+        private List<Account> _initialData;
 
         public AccountTests()
         {
-            var connectionString = "Data Source=(localdb)\\MSSQLLocalDB; Integrated Security=True; Initial Catalog=MyDatabase; TrustServerCertificate=True;";
-            // Use DbContextOptions specific to your Dbcontext class.
             var options = new DbContextOptionsBuilder<Dbcontext>()
-                .UseSqlServer(connectionString)
+                .UseInMemoryDatabase(databaseName: "TestDatabase")
                 .Options;
 
-            // Initialize your specific DbContext with the correct options.
             _context = new Dbcontext(options);
             _dbAccess = new DbAccess(_context);
 
-            _transaction = _context.Database.BeginTransaction();  // Start transaction
-            _initialData = new List<Account>();  // Initialize the list here
-            PrepareInitialData();
+            SeedDatabase();  // Initialize the database
         }
 
-
-        private void PrepareInitialData()
+        private void SeedDatabase()
         {
-            if (!_context.Acc.Any())  // Check if the database is empty
+            _context.Database.EnsureDeleted();
+            _context.Database.EnsureCreated();
+
+            var accounts = new List<Account>
             {
-                var account = new Account
+                new Account
                 {
-                    UserName = "initialUser",
+                    Id = 1,
+                    UserName = "TestUser",
                     Password = "initialPassword",
-                    Email = "initial@example.com",
+                    Email = "test1@example.com",
                     Name = "Initial Name",
                     IsAdmin = false,
                     IsLoggedin = false
-                };
-                _context.Acc.Add(account);
-                _context.SaveChanges();
-            }
-            _initialData = _context.Acc.ToList();  // Always refresh _initialData from current DB state
+                },
+                new Account
+                {
+                    Id = 2,
+                    UserName = "secondUser",
+                    Password = "secondPassword",
+                    Email = "second@example.com",
+                    Name = "Second Name",
+                    IsAdmin = false,
+                    IsLoggedin = false
+                }
+            };
+
+            _context.Acc.AddRange(accounts);
+            _context.SaveChanges();
+
+            _initialData = _context.Acc.ToList();
         }
-
-
 
         public void Dispose()
         {
-            _transaction.Rollback();
-            _transaction.Dispose();
+            _context.Database.EnsureDeleted();
             _context.Dispose();
         }
 
@@ -68,52 +73,36 @@ namespace TestProject2.repotest
             var accounts = _dbAccess.GetAllAccounts();
             Assert.Equal(_initialData.Count, accounts.Count);
         }
+
         [Fact]
         public void GetAccountById_ReturnsCorrectAccount()
         {
             var firstAccount = _initialData.FirstOrDefault();
-            if (firstAccount == null)
-            {
-                Assert.Fail("No accounts available for testing.");
-                return;
-            }
+            Assert.NotNull(firstAccount);
 
             var account = _dbAccess.GetAccountById(firstAccount.Id);
             Assert.NotNull(account);
-            // Ensure the expected username is correctly set to match the actual username in the database
-            Assert.Equal(firstAccount.UserName, account.UserName); // Adjusted to dynamically match the first account's username
+
+            Assert.Equal(firstAccount.UserName, account.UserName);
         }
 
         [Fact]
         public void UpdateAccount_UpdatesSuccessfully()
         {
             var firstAccount = _initialData.FirstOrDefault();
-            if (firstAccount == null)
-            {
-                Assert.Fail("No account found for testing.");
-                return;
-            }
+            Assert.NotNull(firstAccount);
 
-            // Retrieve the account with no tracking to avoid conflicts
-            var account = _context.Acc.AsNoTracking().FirstOrDefault(a => a.Id == firstAccount.Id);
-            if (account == null)
-            {
-                Assert.Fail("No account found with ID " + firstAccount.Id);
-                return;
-            }
+            var account = _context.Acc.FirstOrDefault(a => a.Id == firstAccount.Id);
+            Assert.NotNull(account);
 
-            // Modify the account details
             account.Email = "updated@example.com";
 
-            // Clear the DbContext local cache before updating
-            _context.ChangeTracker.Clear(); // This ensures no tracked entities are conflicting
+            _context.ChangeTracker.Clear(); // Clear the change tracker to avoid conflicts
 
-            // Update the account
-            _context.Acc.Update(account);
-            _context.SaveChanges();
+            _dbAccess.UpdateAccount(account);  // Update account using DbAccess
 
-            // Verify the update
-            var updatedAccount = _context.Acc.AsNoTracking().FirstOrDefault(a => a.Id == firstAccount.Id);
+            var updatedAccount = _context.Acc.FirstOrDefault(a => a.Id == firstAccount.Id);
+            Assert.NotNull(updatedAccount);
             Assert.Equal("updated@example.com", updatedAccount.Email);
         }
 
@@ -121,89 +110,78 @@ namespace TestProject2.repotest
         public void ChangePassword_UpdatesPasswordSuccessfully()
         {
             var firstAccount = _initialData.FirstOrDefault();
-            if (firstAccount == null)
-            {
-                Assert.Fail("No accounts available for testing.");
-                return;
-            }
+            Assert.NotNull(firstAccount);
 
             var account = _context.Acc.FirstOrDefault(a => a.Id == firstAccount.Id);
-            if (account == null)
-            {
-                Assert.Fail("No account found with ID " + firstAccount.Id);
-                return;
-            }
+            Assert.NotNull(account);
 
             var newPassword = "NewPassword123";
-            account.Password = newPassword;
-            _context.SaveChanges();
+            _dbAccess.ChangePassword(firstAccount.Id, newPassword);
 
-            var updatedAccount = _context.Acc.AsNoTracking().FirstOrDefault(a => a.Id == account.Id);
+            _context.ChangeTracker.Clear(); // Clear the change tracker to avoid conflicts
+            var updatedAccount = _context.Acc.FirstOrDefault(a => a.Id == account.Id);
+            Assert.NotNull(updatedAccount);
             Assert.Equal(newPassword, updatedAccount.Password);
         }
+
         [Fact]
         public void ChangeUsername_UpdatesUsernameSuccessfully()
         {
             var firstAccount = _initialData.FirstOrDefault();
-            if (firstAccount == null)
-            {
-                Assert.Fail("No accounts available for testing.");
-                return;
-            }
+            Assert.NotNull(firstAccount);
 
             var newUsername = "NewUsername";
             _dbAccess.ChangeUsername(firstAccount.Id, newUsername);
 
-            var updatedAccount = _context.Acc.Find(firstAccount.Id);
+            _context.ChangeTracker.Clear(); // Clear the change tracker to avoid conflicts
+            var updatedAccount = _context.Acc.FirstOrDefault(a => a.Id == firstAccount.Id);
+            Assert.NotNull(updatedAccount);
             Assert.Equal(newUsername, updatedAccount.UserName);
         }
 
         [Fact]
         public void ChangeEmail_UpdatesEmailSuccessfully()
         {
-            var account = _context.Acc.Find(_initialData.First().Id); // Use the first available account ID
-            if (account == null)
-            {
-                Assert.Fail("No account found with expected ID.");
-                return;
-            }
+            var account = _initialData.FirstOrDefault();
+            Assert.NotNull(account);
 
             var newEmail = "new@example.com";
             _dbAccess.ChangeEmail(account.Id, newEmail);
 
-            var updatedAccount = _context.Acc.Find(account.Id);
+            _context.ChangeTracker.Clear(); // Clear the change tracker to avoid conflicts
+            var updatedAccount = _context.Acc.FirstOrDefault(a => a.Id == account.Id);
+            Assert.NotNull(updatedAccount);
             Assert.Equal(newEmail, updatedAccount.Email);
         }
-
-        //[Fact]
-        //public void CheckLogin_ValidCredentials_ReturnsAccountInfo()
-        //{
-        //    var firstAccount = _initialData.FirstOrDefault();
-        //    Assert.NotNull(firstAccount); // Ensure there is an account to test
-
-        //    var result = _dbAccess.CheckLogin(firstAccount.UserName, firstAccount.Password);
-        //    Assert.NotNull(result); // Ensure a result is returned
-
-        //    // Using reflection to check property existence before accessing
-        //    var resultProperties = result.GetType().GetProperties().Select(p => p.Name).ToList();
-
-        //    // Manually check for the properties and assert with a message if not found
-        //    Assert.True(resultProperties.Contains("IsAdmin"), "Result object does not contain 'IsAdmin' property.");
-        //    Assert.True(resultProperties.Contains("AccountId"), "Result object does not contain 'AccountId' property.");
-
-        //    // Safely casting to dynamic after confirming properties exist
-        //    dynamic loginResult = result;
-        //    Assert.False(loginResult.IsAdmin);
-        //    Assert.Equal(firstAccount.Id, loginResult.AccountId);
-        //}
-
-
 
         [Fact]
         public void CheckLogin_InvalidCredentials_ReturnsNull()
         {
             var result = _dbAccess.CheckLogin("wrongUser", "wrongPassword");
             Assert.Null(result);
+        }
+
+        [Fact]
+        public void CheckLogin_ValidCredentials_ReturnsAccountInfo()
+        {
+            var firstAccount = _initialData.FirstOrDefault();
+            Assert.NotNull(firstAccount);
+
+            var result = _dbAccess.CheckLogin(firstAccount.UserName, firstAccount.Password);
+            Assert.NotNull(result);
+
+            if (result != null)
+            {
+                var accountId = (int)result.GetType().GetProperty("AccountId").GetValue(result, null);
+                var isAdmin = (bool)result.GetType().GetProperty("IsAdmin").GetValue(result, null);
+
+                Assert.Equal(firstAccount.Id, accountId);
+                Assert.Equal(firstAccount.IsAdmin, isAdmin);
+
+                var loggedInAccount = _context.Acc.FirstOrDefault(a => a.Id == firstAccount.Id);
+                Assert.NotNull(loggedInAccount);
+                Assert.True(loggedInAccount.IsLoggedin);
+            }
         }
     }
 }

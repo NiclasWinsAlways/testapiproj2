@@ -394,12 +394,29 @@ namespace TestRepo.Data
                 _dbContext.SaveChanges();
             }
         }
+        public void ChangePassword(int accountId, string newPassword)
+        {
+            var account = _dbContext.Acc.SingleOrDefault(a => a.Id == accountId);
+            if (account != null)
+            {
+                account.Password = newPassword;
+                _dbContext.SaveChanges();
+            }
+        }
+
+        public void ChangeUsername(int accountId, string newUsername)
+        {
+            var account = _dbContext.Acc.SingleOrDefault(a => a.Id == accountId);
+            if (account != null)
+            {
+                account.UserName = newUsername;
+                _dbContext.SaveChanges();
+            }
+        }
+
         public void ChangeEmail(int accountId, string newEmail)
         {
-            // Find the account
             var account = _dbContext.Acc.SingleOrDefault(a => a.Id == accountId);
-
-            // If exists, update
             if (account != null)
             {
                 account.Email = newEmail;
@@ -407,75 +424,15 @@ namespace TestRepo.Data
             }
         }
 
-        //HASH ALL EXSISTING EXAMPLE
-        //public void HashExistingPasswords()
-        //{
-        //    // Get all accounts with unhashed passwords
-        //    var accounts = _dbContext.Acc.Where(a => string.IsNullOrEmpty(a.PasswordHash)).ToList();
-
-        //    // Hash the passwords and update the database
-        //    foreach (var account in accounts)
-        //    {
-        //        account.PasswordHash = PasswordHasher.HashPassword(account.Password);
-        //        _dbContext.Acc.Update(account);
-        //    }
-
-        //    _dbContext.SaveChanges();
-        //}
-
-        //password hash example
-        //public void ChangePassword(int accountId, string newPassword)
-        //{
-        //    // Find the account
-        //    var account = _dbContext.Acc.SingleOrDefault(a => a.Id == accountId);
-
-        //    // If exists, update
-        //    if (account != null)
-        //    {
-        //        // Generate a new salt
-        //        account.Salt = GenerateSalt();
-
-        //        // Hash the new password
-        //        account.PasswordHash = PasswordHasher.HashPassword(newPassword + account.Salt);
-
-        //        _dbContext.SaveChanges();
-        //    }
-        //}
-        public void ChangePassword(int accountId, string newPassword)
-        {
-            // Find the account
-            var account = _dbContext.Acc.SingleOrDefault(a => a.Id == accountId);
-
-            // If exists, update
-            if (account != null)
-            {
-                account.Password = newPassword;
-                _dbContext.SaveChanges();
-            }
-        }
-        public void ChangeUsername(int accountId, string newUsername)
-        {
-            // Find the account
-            var account = _dbContext.Acc.SingleOrDefault(a => a.Id == accountId);
-
-            // If exists, update
-            if (account != null)
-            {
-                account.UserName = newUsername;
-                _dbContext.SaveChanges();
-            }
-
-        }
-        public Account GetAccountById(int accountId)
-        {
-            // Assuming you have a DbContext object to interact with your database
-            return _dbContext.Acc.FirstOrDefault(a => a.Id == accountId);
-        }
         public void UpdateAccount(Account account)
         {
-            // Update the existing account entity and save changes
-            _dbContext.Acc.Update(account);
+            _dbContext.Entry(account).State = EntityState.Modified;
             _dbContext.SaveChanges();
+        }
+
+        public Account GetAccountById(int accountId)
+        {
+            return _dbContext.Acc.FirstOrDefault(a => a.Id == accountId);
         }
 
         public List<Account> GetAllAccounts()
