@@ -10,6 +10,7 @@ using testapi.Controllers;
 
 namespace TestProject2.controllertest
 {
+    // Test class for AccountController
     public class AccountControllerTests : IDisposable
     {
         private readonly DbContextOptions<Dbcontext> _contextOptions;
@@ -17,6 +18,7 @@ namespace TestProject2.controllertest
         private readonly DbAccess _dbAccess;
         private readonly AccountController _controller;
 
+        // Constructor to set up the test context and controller
         public AccountControllerTests()
         {
             // Configure in-memory database for testing
@@ -28,10 +30,11 @@ namespace TestProject2.controllertest
             _dbAccess = new DbAccess(_context);
             _controller = new AccountController(_dbAccess);
 
-            // Seed the in-memory database
+            // Seed the in-memory database with initial data
             SeedDatabase();
         }
 
+        // Method to seed the in-memory database with initial data
         private void SeedDatabase()
         {
             // Clear existing data and reset the change tracker
@@ -45,12 +48,14 @@ namespace TestProject2.controllertest
             _context.SaveChanges();
         }
 
+        // Dispose method to clean up after each test
         public void Dispose()
         {
             _context.Database.EnsureDeleted();
             _context.Dispose();
         }
 
+        // Test to verify that ListAccounts returns a non-empty result
         [Fact]
         public void ListAccounts_ShouldReturnNotEmptyResult()
         {
@@ -63,6 +68,7 @@ namespace TestProject2.controllertest
             Assert.True(accounts.Count > 0);
         }
 
+        // Test to verify that CreateAccount returns a CreatedResult
         [Fact]
         public void CreateAccount_ShouldReturnCreatedResult()
         {
@@ -76,6 +82,7 @@ namespace TestProject2.controllertest
             Assert.Equal($"api/account/{newAccount.Id}", result.Location);
         }
 
+        // Test to verify that GetAccountInfo returns NotFound for an invalid ID
         [Fact]
         public void GetAccountInfo_ShouldReturnNotFoundForInvalidId()
         {
@@ -86,6 +93,7 @@ namespace TestProject2.controllertest
             Assert.IsType<NotFoundResult>(result);
         }
 
+        // Test to verify that ChangeUsername returns OkResult for a valid username
         [Fact]
         public void ChangeUsername_WhenUsernameIsValid_ReturnsOkResult()
         {
@@ -102,6 +110,7 @@ namespace TestProject2.controllertest
             Assert.Equal(200, result.StatusCode);
         }
 
+        // Test to verify that ChangeUsername returns BadRequest for an invalid username
         [Fact]
         public void ChangeUsername_WhenUsernameIsInvalid_ReturnsBadRequest()
         {
@@ -118,6 +127,7 @@ namespace TestProject2.controllertest
             Assert.Equal(400, result.StatusCode);
         }
 
+        // Test to verify that ChangePassword returns OkResult for a valid request
         [Fact]
         public void ChangePassword_WithValidRequest_ReturnsOk()
         {
@@ -135,6 +145,7 @@ namespace TestProject2.controllertest
             Assert.Contains("Password updated successfully.", result.Value.ToString());
         }
 
+        // Test to verify that ChangePassword returns BadRequest for an empty password
         [Fact]
         public void ChangePassword_WithEmptyPassword_ReturnsBadRequest()
         {
@@ -152,6 +163,7 @@ namespace TestProject2.controllertest
             Assert.Contains("NewPassword is required", result.Value.ToString());
         }
 
+        // Test to verify that ChangeEmail returns OkResult for a valid request
         [Fact]
         public void ChangeEmail_WithValidRequest_ReturnsOk()
         {
@@ -169,6 +181,7 @@ namespace TestProject2.controllertest
             Assert.Contains("Email updated successfully.", result.Value.ToString());
         }
 
+        // Test to verify that ChangeEmail returns BadRequest for an empty email
         [Fact]
         public void ChangeEmail_WithEmptyEmail_ReturnsBadRequest()
         {
@@ -186,6 +199,7 @@ namespace TestProject2.controllertest
             Assert.Contains("NewEmail is required", result.Value.ToString());
         }
 
+        // Test to verify that DeleteAccount returns NoContent when successful
         [Fact]
         public void DeleteAccount_WhenSuccessful_ReturnsNoContent()
         {
@@ -200,6 +214,7 @@ namespace TestProject2.controllertest
             Assert.Equal(204, result.StatusCode);
         }
 
+        // Uncomment and complete the test to verify that DeleteAccount returns NotFound for a non-existent account
         //[Fact]
         //public void DeleteAccount_WhenAccountDoesNotExist_ReturnsNotFound()
         //{

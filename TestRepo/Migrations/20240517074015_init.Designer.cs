@@ -12,7 +12,7 @@ using TestRepo.Data;
 namespace TestRepo.Migrations
 {
     [DbContext(typeof(Dbcontext))]
-    [Migration("20240514071729_init")]
+    [Migration("20240517074015_init")]
     partial class init
     {
         /// <inheritdoc />

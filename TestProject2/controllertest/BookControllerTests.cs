@@ -10,6 +10,7 @@ using testapi.Controllers;
 
 namespace TestProject2.controllertest
 {
+    // Test class for BookController
     public class BookControllerTests : IDisposable
     {
         private readonly DbContextOptions<Dbcontext> _contextOptions;
@@ -17,6 +18,7 @@ namespace TestProject2.controllertest
         private readonly DbAccess _dbAccess;
         private readonly BookController _controller;
 
+        // Constructor to set up the test context and controller
         public BookControllerTests()
         {
             // Configure in-memory database for testing
@@ -28,10 +30,11 @@ namespace TestProject2.controllertest
             _dbAccess = new DbAccess(_context);
             _controller = new BookController(_dbAccess);
 
-            // Seed the in-memory database
+            // Seed the in-memory database with initial data
             SeedDatabase();
         }
 
+        // Method to seed the in-memory database with initial data
         private void SeedDatabase()
         {
             // Ensure the database is clean before seeding
@@ -43,18 +46,20 @@ namespace TestProject2.controllertest
 
             // Add test data
             _context.Books.AddRange(
-                new Book { Id = 1, Title = "Sample Book", Author = "Author Test" },
-                new Book { Id = 2, Title = "Another Book", Author = "Another Author" }
+                new Book { Id = 1, Title = "Sample Book", Author = "Author Test", IsLoaned = false },
+                new Book { Id = 2, Title = "Another Book", Author = "Another Author", IsLoaned = true }
             );
             _context.SaveChanges();
         }
 
+        // Dispose method to clean up after each test
         public void Dispose()
         {
             _context.Database.EnsureDeleted();
             _context.Dispose();
         }
 
+        // Test to verify that GetBookByTitle returns the correct book for a valid title
         [Fact]
         public void GetBookByTitle_ValidTitle_ReturnsBook()
         {
@@ -70,6 +75,7 @@ namespace TestProject2.controllertest
             Assert.Equal("Author Test", book.Author);
         }
 
+        // Test to verify that GetAllBooks returns a list of books when available
         [Fact]
         public void GetAllBooks_ShouldReturnBooksWhenAvailable()
         {
@@ -82,6 +88,7 @@ namespace TestProject2.controllertest
             Assert.True(books.Count > 0);
         }
 
+        // Test to verify that GetAllBooks returns NotFound when no books are available
         [Fact]
         public void GetAllBooks_ShouldReturnNotFoundWhenNoBooksAvailable()
         {
@@ -98,6 +105,7 @@ namespace TestProject2.controllertest
             Assert.Equal("No books found.", notFoundResult.Value);
         }
 
+        // Test to verify that GetBookById returns the correct book when it exists
         [Fact]
         public void GetBookById_BookExists_ReturnsOkWithBook()
         {
@@ -112,6 +120,7 @@ namespace TestProject2.controllertest
             Assert.Equal(existingBook.Id, book.Id);
         }
 
+        // Test to verify that GetBookById returns NotFound when the book does not exist
         [Fact]
         public void GetBookById_BookDoesNotExist_ReturnsNotFound()
         {
@@ -123,6 +132,7 @@ namespace TestProject2.controllertest
             Assert.Equal(404, result.StatusCode);
         }
 
+        // Test to verify that AddBook returns CreatedAtActionResult for a valid book
         [Fact]
         public void AddBook_WithValidBook_ReturnsCreatedResult()
         {
@@ -137,6 +147,7 @@ namespace TestProject2.controllertest
             Assert.Equal(newBook.Title, book.Title);
         }
 
+        // Test to verify that AddBook returns BadRequest when the book is null
         [Fact]
         public void AddBook_WithNullBook_ReturnsBadRequest()
         {
@@ -148,6 +159,7 @@ namespace TestProject2.controllertest
             Assert.Equal("Book data is required.", result.Value);
         }
 
+        // Test to verify that GetBookByTitle returns NotFound for an invalid title
         [Fact]
         public void GetBookByTitle_InvalidTitle_ReturnsNotFound()
         {
@@ -160,34 +172,42 @@ namespace TestProject2.controllertest
             Assert.Contains("No book found with title", result.Value.ToString());
         }
 
+        // Test to verify that LoanBook returns Ok when the book exists and is loanable
         [Fact]
+       
         public void LoanBook_BookExistsAndLoanable_ReturnsOk()
         {
             SeedDatabase(); // Ensure fresh data for each test
+            int accountId = 1; // Specify a valid accountId
             int bookId = _context.Books.First().Id;
             DateTime dueDate = DateTime.Now.AddDays(14);
 
-            var result = _controller.LoanBook(bookId, dueDate) as OkObjectResult;
+            var result = _controller.LoanBook(accountId, bookId, dueDate) as OkObjectResult;
 
             Assert.NotNull(result);
             Assert.Equal(200, result.StatusCode);
             Assert.Equal("Book loaned successfully.", result.Value);
         }
 
+
+        // Test to verify that LoanBook returns NotFound for an invalid book ID
         [Fact]
         public void LoanBook_WithInvalidBookId_ReturnsNotFound()
         {
             SeedDatabase(); // Ensure fresh data for each test
+            int accountId = 1; // Specify a valid accountId
             int invalidBookId = 999;
             DateTime dueDate = DateTime.Now.AddDays(14);
 
-            var result = _controller.LoanBook(invalidBookId, dueDate) as NotFoundObjectResult;
+            var result = _controller.LoanBook(accountId, invalidBookId, dueDate) as NotFoundObjectResult;
 
             Assert.NotNull(result);
             Assert.Equal(404, result.StatusCode);
             Assert.Equal("Book not found or already loaned.", result.Value);
         }
 
+
+        // Test to verify that CreateVolume returns Ok for valid data
         [Fact]
         public void CreateVolume_WithValidData_ReturnsSuccess()
         {
@@ -201,6 +221,7 @@ namespace TestProject2.controllertest
             Assert.Equal("Volume created successfully.", result.Value);
         }
 
+        // Test to verify that CreateVolume returns BadRequest for invalid data
         [Fact]
         public void CreateVolume_WithInvalidData_ReturnsBadRequest()
         {
@@ -212,6 +233,7 @@ namespace TestProject2.controllertest
             Assert.Equal("Invalid book ID or volume number.", result.Value);
         }
 
+        // Test to verify that CreateVolume returns NotFound for a non-existent book
         [Fact]
         public void CreateVolume_WithNonexistentBook_ReturnsNotFound()
         {
@@ -223,6 +245,7 @@ namespace TestProject2.controllertest
             Assert.Equal("Book not found.", result.Value);
         }
 
+        // Test to verify that DeleteBookById returns BadRequest for an invalid ID
         [Fact]
         public void DeleteBookById_WithInvalidId_ReturnsBadRequest()
         {
@@ -234,6 +257,7 @@ namespace TestProject2.controllertest
             Assert.Contains("Invalid book ID", result.Value.ToString());
         }
 
+        // Test to verify that DeleteBookById returns NotFound for a non-existent book ID
         [Fact]
         public void DeleteBookById_WithNonExistentId_ReturnsNotFound()
         {
@@ -246,6 +270,7 @@ namespace TestProject2.controllertest
             Assert.Contains("Book not found", result.Value.ToString());
         }
 
+        // Test to verify that DeleteBookById returns Ok for a valid book ID
         [Fact]
         public void DeleteBookById_WithValidId_ReturnsOk()
         {
@@ -256,6 +281,21 @@ namespace TestProject2.controllertest
             Assert.NotNull(result);
             Assert.Equal(200, result.StatusCode);
             Assert.Contains("Book deleted successfully", result.Value.ToString());
+        }
+
+   
+
+        // Test to verify that GetBooksByAccount returns NotFound when no books are found
+        [Fact]
+        public void GetBooksByAccount_NoBooksFound_ReturnsNotFound()
+        {
+            SeedDatabase(); // Ensure fresh data for each test
+            int accountId = 999;
+            var result = _controller.GetBooksByAccount(accountId) as NotFoundObjectResult;
+
+            Assert.NotNull(result);
+            Assert.Equal(404, result.StatusCode);
+            Assert.Equal("No books found for this account.", result.Value);
         }
     }
 }

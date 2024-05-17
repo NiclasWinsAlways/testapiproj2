@@ -96,7 +96,7 @@ namespace testapi.Controllers
 
         
         [HttpPost("loan/{bookId}")]
-        public IActionResult LoanBook(int bookId, [FromBody] DateTime dueDate)
+        public IActionResult LoanBook(int bookId, int bookId1, [FromBody] DateTime dueDate)
         {
             try
             {
