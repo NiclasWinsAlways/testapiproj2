@@ -84,7 +84,7 @@ namespace TestRepo.Data
             }
         }
         //loan book
-        public bool LoanBook(int bookId, DateTime dueDate)
+        public bool LoanBook(int bookId, int bookId1, DateTime dueDate)
         {
             var book = _dbContext.Books.FirstOrDefault(b => b.Id == bookId);
             if (book == null)

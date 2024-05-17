@@ -99,7 +99,6 @@ namespace TestProject2.repotest
         }
 
         [Fact]
-        // Test that UpdateAccount updates an account successfully
         public void UpdateAccount_UpdatesSuccessfully()
         {
             // Arrange: Get the first account and modify its email
@@ -111,17 +110,18 @@ namespace TestProject2.repotest
 
             account.Email = "updated@example.com";
 
-            // Act: Update the account using dbAccess
-            _dbAccess.UpdateAccount(account);
-
             // Clear the change tracker to avoid conflicts
             _context.ChangeTracker.Clear();
+
+            // Act: Update the account using dbAccess
+            _dbAccess.UpdateAccount(account);
 
             // Assert: Verify the account was updated
             var updatedAccount = _context.Acc.AsNoTracking().FirstOrDefault(a => a.Id == firstAccount.Id);
             Assert.NotNull(updatedAccount);
             Assert.Equal("updated@example.com", updatedAccount.Email);
         }
+
 
         [Fact]
         // Test that ChangePassword updates the password successfully

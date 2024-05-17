@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using System;
+using System.Linq;
 using TestRepo.Data;
 using TestRepo.DTO;
 using TestRepo.Interface;
@@ -38,7 +39,6 @@ namespace testapi.Controllers
                 return StatusCode(500, "An error occurred while retrieving books: " + ex.Message);
             }
         }
-
 
         [HttpGet("{id}")]
         public IActionResult GetBookById(int id)
@@ -94,13 +94,12 @@ namespace testapi.Controllers
             }
         }
 
-        
-        [HttpPost("loan/{bookId}")]
-        public IActionResult LoanBook(int bookId, int bookId1, [FromBody] DateTime dueDate)
+        [HttpPost("loan/{accountId}/{bookId}")]
+        public IActionResult LoanBook(int accountId, int bookId, [FromBody] DateTime dueDate)
         {
             try
             {
-                bool result = _dbAccess.LoanBook(bookId, dueDate);
+                bool result = _dbAccess.LoanBook(accountId, bookId, dueDate);
 
                 if (!result)
                 {
@@ -114,12 +113,24 @@ namespace testapi.Controllers
                 return StatusCode(500, "An error occurred while loaning the book: " + ex.Message);
             }
         }
-        // add a unit test for this one later
+
+
         [HttpGet("list/{accountId}")]
         public IActionResult GetBooksByAccount(int accountId)
         {
-            var booksWithProgress = _dbAccess.GetBookList(accountId);
-            return Ok(booksWithProgress);
+            try
+            {
+                var booksWithProgress = _dbAccess.GetBookList(accountId);
+                if (booksWithProgress == null || !booksWithProgress.Any())
+                {
+                    return NotFound("No books found for this account.");
+                }
+                return Ok(booksWithProgress);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while retrieving books by account: " + ex.Message);
+            }
         }
 
         [HttpPost("add-volume")]
@@ -173,8 +184,6 @@ namespace testapi.Controllers
             {
                 return StatusCode(500, new ProblemDetails { Title = "Invalid operation", Detail = ex.Message });
             }
-
-
         }
     }
 }

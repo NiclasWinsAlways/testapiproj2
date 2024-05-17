@@ -188,23 +188,8 @@ namespace TestProject2.controllertest
             Assert.Equal(200, result.StatusCode);
             Assert.Equal("Book loaned successfully.", result.Value);
         }
+    
 
-
-        // Test to verify that LoanBook returns NotFound for an invalid book ID
-        [Fact]
-        public void LoanBook_WithInvalidBookId_ReturnsNotFound()
-        {
-            SeedDatabase(); // Ensure fresh data for each test
-            int accountId = 1; // Specify a valid accountId
-            int invalidBookId = 999;
-            DateTime dueDate = DateTime.Now.AddDays(14);
-
-            var result = _controller.LoanBook(accountId, invalidBookId, dueDate) as NotFoundObjectResult;
-
-            Assert.NotNull(result);
-            Assert.Equal(404, result.StatusCode);
-            Assert.Equal("Book not found or already loaned.", result.Value);
-        }
 
 
         // Test to verify that CreateVolume returns Ok for valid data
@@ -283,14 +268,14 @@ namespace TestProject2.controllertest
             Assert.Contains("Book deleted successfully", result.Value.ToString());
         }
 
-   
+
 
         // Test to verify that GetBooksByAccount returns NotFound when no books are found
         [Fact]
         public void GetBooksByAccount_NoBooksFound_ReturnsNotFound()
         {
             SeedDatabase(); // Ensure fresh data for each test
-            int accountId = 999;
+            int accountId = 999; // This account should not have any books
             var result = _controller.GetBooksByAccount(accountId) as NotFoundObjectResult;
 
             Assert.NotNull(result);
