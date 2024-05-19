@@ -40,6 +40,27 @@ namespace testapi.Controllers
             }
         }
 
+        [HttpGet("list-all")]
+        public IActionResult ListAllBooks()
+        {
+            try
+            {
+                var books = _dbAccess.GetAllBooks();
+                if (books.Any())
+                {
+                    return Ok(books);
+                }
+                else
+                {
+                    return NotFound("No books found.");
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while retrieving books: " + ex.Message);
+            }
+        }
+
         [HttpGet("{id}")]
         public IActionResult GetBookById(int id)
         {
@@ -114,6 +135,26 @@ namespace testapi.Controllers
             }
         }
 
+
+        [HttpPost("return/{accountId}/{bookId}")]
+        public IActionResult ReturnBook(int accountId, int bookId)
+        {
+            try
+            {
+                bool result = _dbAccess.ReturnBook(accountId, bookId);
+
+                if (!result)
+                {
+                    return NotFound("Book not found or not currently loaned.");
+                }
+
+                return Ok("Book returned successfully.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while returning the book: " + ex.Message);
+            }
+        }
 
         [HttpGet("list/{accountId}")]
         public IActionResult GetBooksByAccount(int accountId)

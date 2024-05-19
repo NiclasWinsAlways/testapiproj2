@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TestRepo.DTO;
+using TestRepo.Models;
 
 namespace TestRepo.Data
 {
@@ -17,6 +18,7 @@ namespace TestRepo.Data
 
         public DbSet<Book> Books { get; set; }
         public DbSet<Account> Acc { get; set; } // Ensure this matches what you use in your controller
+        public DbSet<Loan> Loans { get; set; }
 
         public DbSet<Volume> Vols { get; set; }
         public DbSet<BookProgress> BooksProgress { get; set; }

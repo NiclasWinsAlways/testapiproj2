@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TestRepo.DTO;
 using TestRepo.Interface;
+using TestRepo.Models;
 
 
 
@@ -31,10 +32,11 @@ namespace TestRepo.Data
             public Book Book { get; set; }
         }
         #region
-        public List<Book> GetAllBooks()
+        public IEnumerable<Book> GetAllBooks()
         {
             return _dbContext.Books.ToList();
         }
+
         public void AddBook(Book book)
         {
             // Your logic to add a book to the database
@@ -83,26 +85,75 @@ namespace TestRepo.Data
                 throw new ApplicationException("Failed to add book progress, possibly because the book does not exist.", ex);
             }
         }
-        //loan book
-        public bool LoanBook(int bookId, int bookId1, DateTime dueDate)
+
+        //return book
+        public bool ReturnBook(int accountId, int bookId)
         {
-            var book = _dbContext.Books.FirstOrDefault(b => b.Id == bookId);
-            if (book == null)
+            var loan = _dbContext.Loans.FirstOrDefault(l => l.AccountId == accountId && l.BookId == bookId && !l.Returned);
+            if (loan == null)
             {
-                return false; // Book not found
+                return false;
             }
 
-            if (book.IsLoaned)
+            loan.Returned = true;
+            var book = _dbContext.Books.Find(bookId);
+            if (book != null)
             {
-                return false; // Book is already loaned out
+                book.IsLoaned = false;
             }
 
-            book.IsLoaned = true;
-            book.DueDate = dueDate;
-            _dbContext.Entry(book).State = EntityState.Modified;
             _dbContext.SaveChanges();
+            return true;
+        }
 
-            return true; // Loan operation successful
+        //loan book
+        public bool LoanBook(int accountId, int bookId, DateTime dueDate)
+        {
+            try
+            {
+                var book = _dbContext.Books.FirstOrDefault(b => b.Id == bookId);
+                if (book == null)
+                {
+                    return false; // Book not found
+                }
+
+                if (book.IsLoaned)
+                {
+                    return false; // Book is already loaned out
+                }
+
+                var loan = new Loan
+                {
+                    AccountId = accountId,
+                    BookId = bookId,
+                    DueDate = dueDate,
+                    LoanDate = DateTime.Now,
+                    Returned = false
+                };
+
+                book.IsLoaned = true;
+                _dbContext.Loans.Add(loan);
+                _dbContext.Entry(book).State = EntityState.Modified;
+
+                _dbContext.SaveChanges(); // Potential point of failure
+                return true; // Loan operation successful
+            }
+            catch (DbUpdateException dbEx)
+            {
+                // Log the detailed exception message and inner exception
+                Console.WriteLine($"An error occurred while saving the entity changes: {dbEx.Message}");
+                if (dbEx.InnerException != null)
+                {
+                    Console.WriteLine($"Inner exception: {dbEx.InnerException.Message}");
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+                // Log any other unexpected exceptions
+                Console.WriteLine($"An unexpected error occurred: {ex.Message}");
+                return false;
+            }
         }
 
         public Book GetBookByTitle(string title)
