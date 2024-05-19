@@ -395,121 +395,121 @@ namespace TestRepo.Data
             return _dbContext.Acc.ToList();
         }
         #endregion
-        #region
         //hash account example
-        //    public object CheckLogin(string userName, string password)
+        #region
+
+        //public object CheckLogin(string userName, string password)
+        //{
+        //    var account = _dbContext.Acc
+        //        .SingleOrDefault(a => a.UserName == userName);
+
+        //    if (account != null && VerifyPassword(account, password))
         //    {
-        //        var account = _dbContext.Acc
-        //            .SingleOrDefault(a => a.UserName == userName);
+        //        account.IsLoggedin = true;
+        //        _dbContext.SaveChanges();
 
-        //        if (account != null && VerifyPassword(account, password))
-        //        {
-        //            account.IsLoggedin = true;
-        //            _dbContext.SaveChanges();
-
-        //            return new { AccountId = account.Id, IsAdmin = account.IsAdmin };
-        //        }
-
-        //        return null;
+        //        return new { AccountId = account.Id, IsAdmin = account.IsAdmin };
         //    }
 
-        //    public Account GetAccInfo(int accountId)
-        //    {
-        //        return _dbContext.Acc.SingleOrDefault(b => b.Id == accountId);
-        //    }
+        //    return null;
+        //}
 
-        //    public void CreateAcc(Account newAccount)
-        //    {
-        //        newAccount.Salt = GenerateSalt();
-        //        newAccount.PasswordHash = HashPassword(newAccount.Password, newAccount.Salt);
-        //        newAccount.Password = null; // Clear the plaintext password
+        //public Account GetAccInfo(int accountId)
+        //{
+        //    return _dbContext.Acc.SingleOrDefault(b => b.Id == accountId);
+        //}
 
-        //        _dbContext.Acc.Add(newAccount);
+        //public void CreateAcc(Account newAccount)
+        //{
+        //    newAccount.Salt = GenerateSalt();
+        //    newAccount.PasswordHash = HashPassword(newAccount.Password, newAccount.Salt);
+        //    newAccount.Password = null; // Clear the plaintext password
+
+        //    _dbContext.Acc.Add(newAccount);
+        //    _dbContext.SaveChanges();
+        //}
+
+        //public void DeleteAcc(int accountId)
+        //{
+        //    var account = _dbContext.Acc.SingleOrDefault(b => b.Id == accountId);
+        //    if (account != null)
+        //    {
+        //        _dbContext.Acc.Remove(account);
         //        _dbContext.SaveChanges();
         //    }
+        //}
 
-        //    public void DeleteAcc(int accountId)
+        //public void ChangePassword(int accountId, string newPassword)
+        //{
+        //    var account = _dbContext.Acc.SingleOrDefault(a => a.Id == accountId);
+        //    if (account != null)
         //    {
-        //        var account = _dbContext.Acc.SingleOrDefault(b => b.Id == accountId);
-        //        if (account != null)
-        //        {
-        //            _dbContext.Acc.Remove(account);
-        //            _dbContext.SaveChanges();
-        //        }
-        //    }
-
-        //    public void ChangePassword(int accountId, string newPassword)
-        //    {
-        //        var account = _dbContext.Acc.SingleOrDefault(a => a.Id == accountId);
-        //        if (account != null)
-        //        {
-        //            account.Salt = GenerateSalt();
-        //            account.PasswordHash = HashPassword(newPassword, account.Salt);
-        //            _dbContext.SaveChanges();
-        //        }
-        //    }
-
-        //    public void ChangeUsername(int accountId, string newUsername)
-        //    {
-        //        var account = _dbContext.Acc.SingleOrDefault(a => a.Id == accountId);
-        //        if (account != null)
-        //        {
-        //            account.UserName = newUsername;
-        //            _dbContext.SaveChanges();
-        //        }
-        //    }
-
-        //    public void ChangeEmail(int accountId, string newEmail)
-        //    {
-        //        var account = _dbContext.Acc.SingleOrDefault(a => a.Id == accountId);
-        //        if (account != null)
-        //        {
-        //            account.Email = newEmail;
-        //            _dbContext.SaveChanges();
-        //        }
-        //    }
-
-        //    public void UpdateAccount(Account account)
-        //    {
-        //        _dbContext.Entry(account).State = EntityState.Modified;
+        //        account.Salt = GenerateSalt();
+        //        account.PasswordHash = HashPassword(newPassword, account.Salt);
         //        _dbContext.SaveChanges();
         //    }
+        //}
 
-        //    public Account GetAccountById(int accountId)
+        //public void ChangeUsername(int accountId, string newUsername)
+        //{
+        //    var account = _dbContext.Acc.SingleOrDefault(a => a.Id == accountId);
+        //    if (account != null)
         //    {
-        //        return _dbContext.Acc.FirstOrDefault(a => a.Id == accountId);
+        //        account.UserName = newUsername;
+        //        _dbContext.SaveChanges();
         //    }
+        //}
 
-        //    public List<Account> GetAllAccounts()
+        //public void ChangeEmail(int accountId, string newEmail)
+        //{
+        //    var account = _dbContext.Acc.SingleOrDefault(a => a.Id == accountId);
+        //    if (account != null)
         //    {
-        //        return _dbContext.Acc.ToList();
+        //        account.Email = newEmail;
+        //        _dbContext.SaveChanges();
         //    }
+        //}
 
-        //    private string GenerateSalt()
-        //    {
-        //        using (var rng = RandomNumberGenerator.Create())
-        //        {
-        //            byte[] saltBytes = new byte[16];
-        //            rng.GetBytes(saltBytes);
-        //            return Convert.ToBase64String(saltBytes);
-        //        }
-        //    }
+        //public void UpdateAccount(Account account)
+        //{
+        //    _dbContext.Entry(account).State = EntityState.Modified;
+        //    _dbContext.SaveChanges();
+        //}
 
-        //    private string HashPassword(string password, string salt)
-        //    {
-        //        using (var sha256 = SHA256.Create())
-        //        {
-        //            byte[] combinedBytes = System.Text.Encoding.UTF8.GetBytes(password + salt);
-        //            byte[] hashBytes = sha256.ComputeHash(combinedBytes);
-        //            return Convert.ToBase64String(hashBytes);
-        //        }
-        //    }
+        //public Account GetAccountById(int accountId)
+        //{
+        //    return _dbContext.Acc.FirstOrDefault(a => a.Id == accountId);
+        //}
 
-        //    private bool VerifyPassword(Account account, string password)
+        //public List<Account> GetAllAccounts()
+        //{
+        //    return _dbContext.Acc.ToList();
+        //}
+
+        //private string GenerateSalt()
+        //{
+        //    using (var rng = RandomNumberGenerator.Create())
         //    {
-        //        string hash = HashPassword(password, account.Salt);
-        //        return hash == account.PasswordHash;
+        //        byte[] saltBytes = new byte[16];
+        //        rng.GetBytes(saltBytes);
+        //        return Convert.ToBase64String(saltBytes);
         //    }
+        //}
+
+        //private string HashPassword(string password, string salt)
+        //{
+        //    using (var sha256 = SHA256.Create())
+        //    {
+        //        byte[] combinedBytes = Encoding.UTF8.GetBytes(password + salt);
+        //        byte[] hashBytes = sha256.ComputeHash(combinedBytes);
+        //        return Convert.ToBase64String(hashBytes);
+        //    }
+        //}
+
+        //private bool VerifyPassword(Account account, string password)
+        //{
+        //    string hash = HashPassword(password, account.Salt);
+        //    return hash == account.PasswordHash;
         //}
     }
 }

@@ -153,18 +153,10 @@ namespace testapi.Controllers
             //}
 
             //[HttpPost("create")]
-            //public IActionResult CreateAccount([FromBody] AccountCreateRequest request)
+            //public IActionResult CreateAccount([FromBody] Account account)
             //{
-            //    if (string.IsNullOrEmpty(request.Password))
+            //    if (string.IsNullOrEmpty(account.Password))
             //        return BadRequest(new { message = "Password is required" });
-
-            //    var account = new Account
-            //    {
-            //        UserName = request.UserName,
-            //        Password = request.Password, // This will be hashed in the DbAccess method
-            //        Email = request.Email,
-            //        IsAdmin = request.IsAdmin
-            //    };
 
             //    _dbAccess.CreateAcc(account);
             //    return Created($"api/account/{account.Id}", new { account.Id });
@@ -256,7 +248,6 @@ namespace testapi.Controllers
             //    {
             //        return StatusCode(500, "Internal server error: " + ex.Message);
             //    }
-
                 #endregion
             }
 
