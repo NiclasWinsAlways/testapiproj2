@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
+using System.Security.Cryptography;
+using System.Text;
 using TestRepo.Data;
 using TestRepo.DTO;
 namespace testapi.Controllers
@@ -142,114 +144,132 @@ namespace testapi.Controllers
 
             //altered version for password hashing
             #region
-            //[HttpGet("list")]
-            //public IActionResult ListAccounts()
+            //public object CheckLogin(string userName, string password)
             //{
-            //    var accounts = _dbAccess.GetAllAccounts();
-            //    if (accounts == null || !accounts.Any())
-            //        return NotFound("No accounts found.");
+            //    var account = _dbContext.Acc
+            //        .SingleOrDefault(a => a.UserName == userName);
 
-            //    return Ok(accounts);
-            //}
-
-            //[HttpPost("create")]
-            //public IActionResult CreateAccount([FromBody] Account account)
-            //{
-            //    if (string.IsNullOrEmpty(account.Password))
-            //        return BadRequest(new { message = "Password is required" });
-
-            //    _dbAccess.CreateAcc(account);
-            //    return Created($"api/account/{account.Id}", new { account.Id });
-            //}
-
-            //[HttpGet("GetAccInfo/{accountId}")]
-            //public IActionResult GetAccountInfo(int accountId)
-            //{
-            //    var account = _dbAccess.GetAccInfo(accountId);
-            //    if (account == null) return NotFound();
-            //    return Ok(account);
-            //}
-
-            //[HttpPost("login")]
-            //public IActionResult Login([FromBody] LoginDto loginDto)
-            //{
-            //    var result = _dbAccess.CheckLogin(loginDto.Username, loginDto.Password);
-            //    if (result == null)
+            //    if (account != null && VerifyPassword(account, password))
             //    {
-            //        return Unauthorized();
+            //        account.IsLoggedin = true;
+            //        _dbContext.SaveChanges();
+
+            //        return new { AccountId = account.Id, IsAdmin = account.IsAdmin };
             //    }
-            //    return Ok(result); // This will return both AccountId and IsAdmin
+
+            //    return null;
             //}
 
-            //[HttpPut("{accountId}/changeUsername")]
-            //public IActionResult ChangeUsername(int accountId, [FromBody] UsernameChangeRequest request)
+            //public Account GetAccInfo(int accountId)
             //{
-            //    if (string.IsNullOrEmpty(request.NewUsername))
-            //        return BadRequest(new { message = "NewUsername is required" });
+            //    return _dbContext.Acc.SingleOrDefault(b => b.Id == accountId);
+            //}
 
-            //    try
+            //public void CreateAcc(Account newAccount)
+            //{
+            //    if (newAccount == null)
+            //        throw new ArgumentNullException(nameof(newAccount));
+
+            //    if (string.IsNullOrEmpty(newAccount.Password))
+            //        throw new ArgumentException("Password cannot be null or empty", nameof(newAccount));
+
+            //    // Generate salt and hash the password
+            //    string salt = GenerateSalt();
+            //    newAccount.Salt = salt;
+            //    newAccount.PasswordHash = HashPassword(newAccount.Password, salt);
+
+            //    // Clear the plain text password before storing the account object
+            //    newAccount.Password = newAccount.PasswordHash;
+
+            //    _dbContext.Acc.Add(newAccount);
+            //    _dbContext.SaveChanges();
+            //}
+
+            //public void DeleteAcc(int accountId)
+            //{
+            //    var account = _dbContext.Acc.SingleOrDefault(b => b.Id == accountId);
+            //    if (account != null)
             //    {
-            //        _dbAccess.ChangeUsername(accountId, request.NewUsername);
-            //        return Ok(new { message = "Username updated successfully." });
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        return StatusCode(500, new { message = $"Internal server error: {ex.Message}" });
+            //        _dbContext.Acc.Remove(account);
+            //        _dbContext.SaveChanges();
             //    }
             //}
 
-            //[HttpPut("{accountId}/changePassword")]
-            //public IActionResult ChangePassword(int accountId, [FromBody] PasswordChangeRequest request)
+            //public void ChangePassword(int accountId, string newPassword)
             //{
-            //    if (string.IsNullOrEmpty(request.NewPassword))
-            //        return BadRequest(new { message = "NewPassword is required" });
-
-            //    try
+            //    var account = _dbContext.Acc.SingleOrDefault(a => a.Id == accountId);
+            //    if (account != null)
             //    {
-            //        _dbAccess.ChangePassword(accountId, request.NewPassword);
-            //        return Ok(new { message = "Password updated successfully." });
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        return StatusCode(500, new { message = $"Internal server error: {ex.Message}" });
+            //        account.Salt = GenerateSalt();
+            //        account.PasswordHash = HashPassword(newPassword, account.Salt);
+            //        _dbContext.SaveChanges();
             //    }
             //}
 
-            //[HttpPut("{accountId}/changeEmail")]
-            //public IActionResult ChangeEmail(int accountId, [FromBody] EmailChangeRequest request)
+            //public void ChangeUsername(int accountId, string newUsername)
             //{
-            //    if (string.IsNullOrEmpty(request.NewEmail))
-            //        return BadRequest(new { message = "NewEmail is required" });
-
-            //    try
+            //    var account = _dbContext.Acc.SingleOrDefault(a => a.Id == accountId);
+            //    if (account != null)
             //    {
-            //        _dbAccess.ChangeEmail(accountId, request.NewEmail);
-            //        return Ok(new { message = "Email updated successfully." });
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        return StatusCode(500, new { message = $"Internal server error: {ex.Message}" });
+            //        account.UserName = newUsername;
+            //        _dbContext.SaveChanges();
             //    }
             //}
 
-            //[HttpDelete("{accountId}")]
-            //public IActionResult DeleteAccount(int accountId)
+            //public void ChangeEmail(int accountId, string newEmail)
             //{
-            //    try
+            //    var account = _dbContext.Acc.SingleOrDefault(a => a.Id == accountId);
+            //    if (account != null)
             //    {
-            //        _dbAccess.DeleteAcc(accountId);
-            //        return NoContent();
+            //        account.Email = newEmail;
+            //        _dbContext.SaveChanges();
             //    }
-            //    catch (KeyNotFoundException knfe)
+            //}
+
+            //public void UpdateAccount(Account account)
+            //{
+            //    _dbContext.Entry(account).State = EntityState.Modified;
+            //    _dbContext.SaveChanges();
+            //}
+
+            //public Account GetAccountById(int accountId)
+            //{
+            //    return _dbContext.Acc.FirstOrDefault(a => a.Id == accountId);
+            //}
+
+            //public List<Account> GetAllAccounts()
+            //{
+            //    return _dbContext.Acc.ToList();
+            //}
+
+            //private string GenerateSalt()
+            //{
+            //    using (var rng = RandomNumberGenerator.Create())
             //    {
-            //        return NotFound(knfe.Message);
+            //        byte[] saltBytes = new byte[16];
+            //        rng.GetBytes(saltBytes);
+            //        return Convert.ToBase64String(saltBytes);
             //    }
-            //    catch (Exception ex)
+            //}
+
+            //private string HashPassword(string password, string salt)
+            //{
+            //    using (var sha256 = SHA256.Create())
             //    {
-            //        return StatusCode(500, "Internal server error: " + ex.Message);
+            //        byte[] combinedBytes = Encoding.UTF8.GetBytes(password + salt);
+            //        byte[] hashBytes = sha256.ComputeHash(combinedBytes);
+            //        return Convert.ToBase64String(hashBytes);
             //    }
-                #endregion
-            }
+            //}
+
+            //private bool VerifyPassword(Account account, string password)
+            //{
+            //    string hash = HashPassword(password, account.Salt);
+            //    return hash == account.PasswordHash;
+            //}
+
+            #endregion
+        }
 
     }
 }

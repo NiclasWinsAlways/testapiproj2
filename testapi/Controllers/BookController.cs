@@ -135,6 +135,24 @@ namespace testapi.Controllers
             }
         }
 
+        [HttpGet("loans")]
+        public IActionResult GetAllLoans()
+        {
+            try
+            {
+                var loans = _dbAccess.GetAllLoans();
+                if (loans == null || !loans.Any())
+                {
+                    return NotFound("No loans found.");
+                }
+                return Ok(loans);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while retrieving loans: " + ex.Message);
+            }
+        }
+
 
         [HttpPost("return/{accountId}/{bookId}")]
         public IActionResult ReturnBook(int accountId, int bookId)
@@ -145,7 +163,7 @@ namespace testapi.Controllers
 
                 if (!result)
                 {
-                    return NotFound("Book not found or not currently loaned.");
+                    return NotFound($"Loan record not found for AccountId: {accountId}, BookId: {bookId} or the book is already returned.");
                 }
 
                 return Ok("Book returned successfully.");
@@ -156,7 +174,7 @@ namespace testapi.Controllers
             }
         }
 
-        [HttpGet("list/{accountId}")]
+            [HttpGet("list/{accountId}")]
         public IActionResult GetBooksByAccount(int accountId)
         {
             try

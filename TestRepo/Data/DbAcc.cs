@@ -89,22 +89,49 @@ namespace TestRepo.Data
         //return book
         public bool ReturnBook(int accountId, int bookId)
         {
-            var loan = _dbContext.Loans.FirstOrDefault(l => l.AccountId == accountId && l.BookId == bookId && !l.Returned);
+            var loan = _dbContext.Loans.FirstOrDefault(l => l.AccountId == accountId && l.BookId == bookId);
             if (loan == null)
             {
+                Console.WriteLine($"Loan not found for AccountId: {accountId}, BookId: {bookId}");
                 return false;
             }
 
-            loan.Returned = true;
-            var book = _dbContext.Books.Find(bookId);
-            if (book != null)
+            // Mark the loan as returned if it is not already
+            if (!loan.Returned)
             {
-                book.IsLoaned = false;
+                loan.Returned = true;
+                var book = _dbContext.Books.Find(bookId);
+                if (book != null)
+                {
+                    book.IsLoaned = false;
+                }
+
+                _dbContext.SaveChanges();
             }
 
-            _dbContext.SaveChanges();
             return true;
         }
+
+        //getallloans
+        public List<LoanDTO> GetAllLoans()
+        {
+            return _dbContext.Loans
+                .Include(l => l.Book)
+                .Include(l => l.Account) // Include Account to access UserName
+                .Select(l => new LoanDTO
+                {
+                    BookTitle = l.Book.Title,
+                    AccountName = l.Account.UserName,
+                    DueDate = l.DueDate,
+                    BookId = l.BookId,
+                    AccountId = l.AccountId,
+                    LoanDate = l.LoanDate,
+                    Returned = l.Returned,
+                    Progress = l.Progress
+                })
+                .ToList();
+        }
+
 
         //loan book
         public bool LoanBook(int accountId, int bookId, DateTime dueDate)

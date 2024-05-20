@@ -18,8 +18,10 @@ namespace TestRepo.Models
             public double Progress { get; set; } // Assuming there's a progress field
 
             public Book Book { get; set; }
-        }
+        public Account Account { get; set; } // Ensure this navigation property exists
+
     }
+}
 
 
 
