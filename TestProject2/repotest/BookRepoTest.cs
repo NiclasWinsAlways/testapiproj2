@@ -12,20 +12,20 @@ namespace TestProject2.controllertest
     // Test class for Book repository operations
     public class BookRepoTests : IDisposable
     {
-        private readonly Dbcontext _context;
+        private readonly Dbcontext _context; // Make sure this matches your actual DbContext derived class name
         private readonly List<Book> _testBooks;
         private readonly TransactionScope _transactionScope;
 
         // Constructor to set up the test context and data
         public BookRepoTests()
         {
-            // Define connection string for the SQL Server
-            var connectionString = "Data Source=(localdb)\\MSSQLLocalDB; Integrated Security=True; Initial Catalog=MyDatabase; TrustServerCertificate=True;";
+            // Configure the DbContext to use an In-Memory database
             var options = new DbContextOptionsBuilder<Dbcontext>()
-                .UseSqlServer(connectionString)
+                .UseInMemoryDatabase(databaseName: "TestBookDB") // Unique name for in-memory instance
                 .Options;
 
-            _context = new Dbcontext(options);
+            // Instantiate your DbContext with the configured options
+            _context = new Dbcontext(options); // Use the actual name of your DbContext derived class
 
             // Begin a new transaction scope for each test
             _transactionScope = new TransactionScope(TransactionScopeOption.RequiresNew,

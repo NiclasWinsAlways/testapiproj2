@@ -97,21 +97,25 @@ namespace TestRepo.Data
                 return false;
             }
 
-            // Mark the loan as returned if it is not already
-            if (!loan.Returned)
+            if (loan.Returned)
             {
-                loan.Returned = true;
-                var book = _dbContext.Books.Find(bookId);
-                if (book != null)
-                {
-                    book.IsLoaned = false;
-                }
-
-                _dbContext.SaveChanges();
+                Console.WriteLine($"Book with id {bookId} has already been returned by accountId {accountId}.");
+                return true;
             }
 
+            loan.Returned = true;
+            var book = _dbContext.Books.Find(bookId);
+            if (book != null)
+            {
+                book.IsLoaned = false;
+            }
+
+            _dbContext.SaveChanges();
+            Console.WriteLine($"Book with id {bookId} returned by accountId {accountId}.");
             return true;
         }
+
+
 
         //getallloans
         public List<LoanDTO> GetAllLoans()
@@ -142,11 +146,13 @@ namespace TestRepo.Data
                 var book = _dbContext.Books.FirstOrDefault(b => b.Id == bookId);
                 if (book == null)
                 {
+                    Console.WriteLine($"Book with id {bookId} not found.");
                     return false; // Book not found
                 }
 
                 if (book.IsLoaned)
                 {
+                    Console.WriteLine($"Book with id {bookId} is already loaned.");
                     return false; // Book is already loaned out
                 }
 
@@ -163,12 +169,12 @@ namespace TestRepo.Data
                 _dbContext.Loans.Add(loan);
                 _dbContext.Entry(book).State = EntityState.Modified;
 
-                _dbContext.SaveChanges(); // Potential point of failure
+                _dbContext.SaveChanges();
+                Console.WriteLine($"Book with id {bookId} loaned to accountId {accountId}.");
                 return true; // Loan operation successful
             }
             catch (DbUpdateException dbEx)
             {
-                // Log the detailed exception message and inner exception
                 Console.WriteLine($"An error occurred while saving the entity changes: {dbEx.Message}");
                 if (dbEx.InnerException != null)
                 {
@@ -178,11 +184,11 @@ namespace TestRepo.Data
             }
             catch (Exception ex)
             {
-                // Log any other unexpected exceptions
                 Console.WriteLine($"An unexpected error occurred: {ex.Message}");
                 return false;
             }
         }
+
 
         public Book GetBookByTitle(string title)
         {

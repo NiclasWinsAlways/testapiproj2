@@ -73,7 +73,7 @@ namespace testapi.Controllers
         }
 
         [HttpPost("add")]
-        public IActionResult AddBook([FromBody] Book book)
+        public IActionResult AddBook([FromBody] Book book) // Removed [FromForm]
         {
             if (book == null)
             {
@@ -90,6 +90,7 @@ namespace testapi.Controllers
                 return StatusCode(500, "An error occurred while adding the book: " + ex.Message);
             }
         }
+
 
         [HttpPost("GetBookByTitle")]
         public IActionResult GetBookByTitle([FromBody] TitleRequest titleRequest)
@@ -135,6 +136,7 @@ namespace testapi.Controllers
             }
         }
 
+
         [HttpGet("loans")]
         public IActionResult GetAllLoans()
         {
@@ -157,24 +159,32 @@ namespace testapi.Controllers
         [HttpPost("return/{accountId}/{bookId}")]
         public IActionResult ReturnBook(int accountId, int bookId)
         {
+            if (accountId <= 0 || bookId <= 0)
+            {
+                return BadRequest(new { message = "Invalid accountId or bookId." });
+            }
+
             try
             {
                 bool result = _dbAccess.ReturnBook(accountId, bookId);
 
                 if (!result)
                 {
-                    return NotFound($"Loan record not found for AccountId: {accountId}, BookId: {bookId} or the book is already returned.");
+                    return NotFound(new { message = $"Loan record not found for AccountId: {accountId}, BookId: {bookId} or the book is already returned." });
                 }
 
-                return Ok("Book returned successfully.");
+                return Ok(new { message = "Book returned successfully." });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, "An error occurred while returning the book: " + ex.Message);
+                return StatusCode(500, new { message = "An error occurred while returning the book: " + ex.Message });
             }
         }
 
-            [HttpGet("list/{accountId}")]
+
+
+
+        [HttpGet("list/{accountId}")]
         public IActionResult GetBooksByAccount(int accountId)
         {
             try
